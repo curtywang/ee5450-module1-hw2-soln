@@ -26,6 +26,8 @@ class UserDB(object):
         :return: (username, password_token)
         """
         generated_token = secrets.token_urlsafe()
+        if username in self._accounts:
+            raise ValueError(f'username {username} already taken')
         self._accounts[username] = nacl.pwhash.str(generated_token.encode())
         return username, generated_token
 

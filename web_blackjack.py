@@ -60,8 +60,11 @@ async def create_game(num_players: int = Path(..., gt=0, description='the number
 
 @app.post('/user/create', status_code=status.HTTP_201_CREATED)
 async def create_user(username: str = Query(..., description='the number of decks to use')):
-    username, password = USER_DB.create_user(username)
-    return {'success': True, 'username': username, 'password': password}
+    try:
+        username, password = USER_DB.create_user(username)
+        return {'success': True, 'username': username, 'password': password}
+    except ValueError:
+        raise HTTPException(status.HTTP_409_CONFLICT, f"username {username} already taken")
 
 
 @app.post('/game/{game_id}/initialize')

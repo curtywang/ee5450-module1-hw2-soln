@@ -4,7 +4,9 @@ from requests.auth import HTTPBasicAuth
 from web_blackjack import app
 
 TEST_USER = 'testah'
+test_user_initialized = False
 TEST_USER2 = 'playah'
+test_user2_initialized = False
 
 
 @pytest.fixture
@@ -13,7 +15,7 @@ def base_client():
 
 
 def test_create_user(base_client):
-    response = base_client.post(f'/user/create?username={TEST_USER}')
+    response = base_client.post(f'/user/create?username=magick')
     resp = response.json()
     assert 'username' in resp
     assert 'password' in resp
@@ -21,18 +23,22 @@ def test_create_user(base_client):
 
 @pytest.fixture
 def base_user(base_client):
-    response = base_client.post(f'/user/create?username={TEST_USER}')
-    resp = response.json()
-    tester_auth = HTTPBasicAuth(username=resp['username'], password=resp['password'])
-    return tester_auth
+    global test_user_initialized
+    if not test_user_initialized:
+        response = base_client.post(f'/user/create?username={TEST_USER}')
+        resp = response.json()
+        test_user_initialized = HTTPBasicAuth(username=resp['username'], password=resp['password'])
+    return test_user_initialized
 
 
 @pytest.fixture
 def base_user2(base_client):
-    response = base_client.post(f'/user/create?username={TEST_USER2}')
-    resp = response.json()
-    tester_auth = HTTPBasicAuth(username=resp['username'], password=resp['password'])
-    return tester_auth
+    global test_user2_initialized
+    if not test_user2_initialized:
+        response = base_client.post(f'/user/create?username={TEST_USER2}')
+        resp = response.json()
+        test_user2_initialized = HTTPBasicAuth(username=resp['username'], password=resp['password'])
+    return test_user2_initialized
 
 
 def test_home(base_client):
