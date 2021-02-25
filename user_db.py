@@ -1,6 +1,7 @@
 from typing import Tuple, Dict
 import secrets
 import nacl.pwhash
+import nacl.exceptions
 
 
 class UserDB(object):
@@ -24,9 +25,11 @@ class UserDB(object):
         :param username: desired username
         :return: (username, password_token)
         """
-        pass
+        generated_token = secrets.token_urlsafe()
+        self._accounts[username] = nacl.pwhash.str(generated_token.encode())
+        return username, generated_token
 
-    def is_valid(self, username: str, password) -> bool:
+    def is_valid(self, username: str, password_attempt: str) -> bool:
         """
         Check whether the given username and password match a user
         present in the UserDB.  The hash of the input password is
@@ -34,8 +37,11 @@ class UserDB(object):
 
         See what you can call in nacl.pwhash to verify an input password.
 
-        :param username:
-        :param password:
+        :param username: username of the user
+        :param password_attempt: attempted password
         :return: True if the credentials are valid, False if not.
         """
-        pass
+        try:
+            return nacl.pwhash.verify(self._accounts[username], password_attempt.encode())
+        except nacl.exceptions.InvalidkeyError:
+            return False

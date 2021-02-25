@@ -39,9 +39,20 @@ class AsyncBlackjackGameDB(object):
         self._current_games_info[game_uuid] = BlackjackGameInfo(
             num_players,
             owner,
-            list(),
+            [owner],
             game_term_password)
         return game_uuid, game_term_password, owner
+
+    async def add_player(self, game_uuid: str, username: str) -> int:
+        """
+        Asks the database to add a player to a game.
+
+        :param game_uuid: UUID of the game
+        :param username: username of the player to add
+        :return: the index of the player who was added
+        """
+        self._current_games_info[game_uuid].players.append(username)
+        return len(self._current_games_info[game_uuid].players) - 1
 
     async def list_games(self) -> List[Tuple[str, int]]:
         """
@@ -52,15 +63,15 @@ class AsyncBlackjackGameDB(object):
         await asyncio.sleep(self._QUERY_TIME)  # simulate query time
         return [(game_id, game.num_players) for game_id, game in self._current_games.items()]
 
-    async def get_game(self, game_id: str) -> Union[Blackjack, None]:
+    async def get_game(self, game_id: str) -> Tuple[Union[Blackjack, None], Union[BlackjackGameInfo, None]]:
         """
         Asks the database for a pointer to a specific game.
 
         :param game_id: the UUID of the specific game
-        :return: None if the game was not found, otherwise pointer to the Blackjack object
+        :return: (None if the game was not found, otherwise pointer to the Blackjack object; Game info or None)
         """
         await asyncio.sleep(self._QUERY_TIME)  # simulate query time
-        return self._current_games.get(game_id, None)
+        return self._current_games.get(game_id, None), self._current_games_info.get(game_id, None)
 
     async def del_game(self, game_id: str, term_pass: str, attempter: str) -> bool:
         """
@@ -76,6 +87,7 @@ class AsyncBlackjackGameDB(object):
             if self._current_games_info[game_id].termination_password == term_pass \
                     and self._current_games_info[game_id].owner == attempter:
                 del self._current_games[game_id]
+                del self._current_games_info[game_id]
                 return True
             else:
                 raise HTTPException(status.HTTP_401_UNAUTHORIZED, "user not authorized")
